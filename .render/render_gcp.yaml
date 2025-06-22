@@ -1,0 +1,14 @@
+services:
+  - type: cron
+    name: gcp-gpu-fetch
+    repo: https://github.com/Jumbo2020/migrations
+    branch: main  # או השם המתאים
+    schedule: "@daily"  # או cron כמו "0 * * * *" לשעתי
+    envVars:
+      - key: PROJECT_ID
+        value: your-project-id
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: service-account.json
+    startCommand: python3 fetch_gcp
+    buildCommand: pip install -r requirements.txt
+    runtime: python
