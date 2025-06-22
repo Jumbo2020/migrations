@@ -11,7 +11,6 @@ jobs:
 
     env:
       PROJECT_ID: ${{ secrets.PROJECT_ID }}
-      GOOGLE_CREDENTIALS_B64: ${{ secrets.GOOGLE_CREDENTIALS_B64 }}
 
     steps:
       - name: Checkout code
@@ -25,9 +24,9 @@ jobs:
       - name: Install dependencies
         run: pip install google-api-python-client google-auth google-auth-httplib2
 
-      - name: Write service-account.json from base64
+      - name: Write service-account.json from secret
         run: |
-          echo "$GOOGLE_CREDENTIALS_B64" | base64 --decode > service-account.json
+          echo '${{ secrets.GCP_SA }}' > service-account.json
 
       - name: Run script and save output
         run: python3 fetch_gcp.py > output.txt
