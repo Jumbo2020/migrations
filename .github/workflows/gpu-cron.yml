@@ -11,7 +11,7 @@ jobs:
 
     env:
       PROJECT_ID: ${{ secrets.PROJECT_ID }}
-      GOOGLE_CREDENTIALS_B64: ${{ secrets.GOOGLE_CREDENTIALS_B64 }}
+      GCP_SA: ${{ secrets.GCP_SA }}
 
     steps:
       - name: Checkout code
@@ -26,17 +26,15 @@ jobs:
         run: pip install google-api-python-client google-auth google-auth-httplib2
 
       - name: Write service-account.json from base64
-        run: |
-          echo "$GOOGLE_CREDENTIALS_B64" | base64 --decode > service-account.json
+        run: echo "$GCP_SA" | base64 --decode > service-account.json
 
       - name: Run script and save output
-        run: |
-          python3 fetch_gcp.py > output.txt
-          echo "===== Output File Content ====="
-          cat output.txt
+        run: python3 fetch_gcp.py > output.txt
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
           name: gcp-gpu-output
-          path: output.txt
+          path: |
+            output.txt
+            output.json
