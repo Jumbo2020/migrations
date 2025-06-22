@@ -1,9 +1,16 @@
+import os
+import base64
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
-PROJECT_ID = 'your-project-id'
-REGIONS = ['us-central1', 'europe-west1', 'asia-east1']  # תעדכן לפי הצורך
+PROJECT_ID = os.environ["PROJECT_ID"]
+REGIONS = ['us-central1', 'europe-west1', 'asia-east1']
+
+# Restore credentials file if provided as base64
+if "GOOGLE_CREDENTIALS_B64" in os.environ:
+    with open("service-account.json", "wb") as f:
+        f.write(base64.b64decode(os.environ["GOOGLE_CREDENTIALS_B64"]))
 
 def list_gpu_instances():
     credentials = service_account.Credentials.from_service_account_file(
@@ -24,4 +31,9 @@ def list_gpu_instances():
                 previous_request=request, previous_response=response)
 
 if __name__ == '__main__':
-    list_gpu_instances()
+    try:
+        print("🚀 Starting GCP GPU fetch script...")
+        list_gpu_instances()
+        print("✅ Done.")
+    except Exception as e:
+        print(f"❌ Error: {e}")
