@@ -1,37 +1,47 @@
-name: Fetch GCP Instances Info
+name: Get GCP VM Info
 
 on:
-  workflow_dispatch: # מאפשר הרצה ידנית
-  schedule:
-    - cron: '0 2 * * *' # מריץ כל יום ב-02:00 בלילה
+  workflow_dispatch: # Allows manual triggering of the workflow
+  push:
+    branches:
+      - main # Triggers the workflow on pushes to the 'main' branch (can be changed)
 
 jobs:
-  fetch-instances:
+  get_vm_data:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to write files to the repository
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9' # Can be changed to another version if needed
 
-      - name: Install dependencies
-        run: pip install google-api-python-client google-auth
-
-      - name: Decode and save service account key
+      - name: Install Google Cloud SDK and Python dependencies
         run: |
-          echo "${{ secrets.GCP_SA }}" | base64 --decode > service-account.json
+          pip install google-cloud-compute
 
-      - name: Run fetch script
-        run: python fetch_gcp_instances.py
-
-      - name: Commit and push results
+      - name: Authenticate to GCP
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA }}
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add gcp_instances.json
-          git commit -m "🔄 Auto-update GCP instances info" || echo "No changes to commit"
-          git push
+          echo "$GCP_SA_KEY" > gcp_service_account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=gcp_service_account.json
+
+      - name: Run Python script to get VM data
+        id: run_script
+        run: python get_gcp_vm_info.py
+
+      - name: Commit and push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'gcp_vm_info.json' # The file created by the script
+          message: 'Update GCP VM information'
+          committer_name: 'GitHub Actions'
+          committer_email: 'actions@github.com'
+          # branch: 'main' # Uncomment and set if pushing to a specific branch is desired
+          # force: true # Use with caution, as it can overwrite existing files
