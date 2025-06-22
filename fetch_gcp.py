@@ -6,12 +6,11 @@ from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 PROJECT_ID = os.environ["PROJECT_ID"]
-REGIONS = ['us-central1', 'europe-west1', 'asia-east1']
 
-# כתיבת קובץ האימות
-if "GOOGLE_CREDENTIALS_B64" in os.environ:
+# כתיבת הקובץ service-account.json מתוך הסוד המקודד בבסיס 64
+if "GCP_SA" in os.environ:
     with open("service-account.json", "wb") as f:
-        f.write(base64.b64decode(os.environ["GOOGLE_CREDENTIALS_B64"]))
+        f.write(base64.b64decode(os.environ["GCP_SA"]))
 
 def list_gpu_instances():
     credentials = service_account.Credentials.from_service_account_file(
@@ -20,7 +19,6 @@ def list_gpu_instances():
     compute = build('compute', 'v1', credentials=credentials)
 
     results = []
-    log_lines = []
     print("📡 Fetching GPU-enabled instances...")
 
     request = compute.instances().aggregatedList(project=PROJECT_ID)
@@ -37,18 +35,14 @@ def list_gpu_instances():
                         "status": instance["status"],
                         "gpus": gpus
                     }
-                    msg = f"✅ Found GPU VM: {result['name']} in {result['zone']}"
-                    print(msg)
-                    log_lines.append(msg)
+                    print(f"✅ Found GPU VM: {result['name']} in {result['zone']}")
                     results.append(result)
         request = compute.instances().aggregatedList_next(
             previous_request=request, previous_response=response)
 
+    # שמירת התוצאה לקובץ
     with open("output.json", "w") as out_file:
         json.dump(results, out_file, indent=2)
-
-    with open("output.txt", "w") as log_file:
-        log_file.write("\n".join(log_lines) + f"\n📁 Saved {len(results)} GPU instances.\n")
 
     print(f"📁 Saved {len(results)} GPU instances to output.json")
 
